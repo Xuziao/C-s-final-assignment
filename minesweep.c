@@ -158,7 +158,7 @@ void draw() {
         }
         printf("\n");
     }
-    printf("Input coordinate x y：");
+    printf("Input coordinate x y:");
 }
 
 stack * push(stack * p, point now) {
