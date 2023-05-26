@@ -183,14 +183,14 @@ void span(point now) {
     p = push(p, now);
     while(p) {
         show[p->data.x][p->data.y] = true;
-        stack * q = p;
+        stack q = *p;
         p = pop(p);
         for (int i = -1; i < 1; i++)
             for (int j = -1; j < 1; j++)
-                if (!mine[q->data.x + i][q->data.y + j]){
-                    point temp = q->data;
-                    temp.x = q->data.x + i;
-                    temp.y = q->data.y + j;
+                if (!mine[q.data.x + i][q.data.y + j]){
+                    point temp = q.data;
+                    temp.x = q.data.x + i;
+                    temp.y = q.data.y + j;
                     p = push(p, temp);
                 }
     }    
