@@ -41,12 +41,12 @@ stack * push(stack * p, point now);
 stack * pop(stack * p);
 
 int main() {
-    printf("按Enter开始游戏\n");
+    printf("Press Enter\n");
     getchar();
     while (play) {        
         creat_map();
         play_game();
-        printf("再来一局Y/N\n");
+        printf("One more round: Y/N\n");
         while (true) {
             char key = getchar();
             if (key == 'Y')
@@ -104,7 +104,7 @@ void play_game() {
         scanf("%d%d", &click.x, &click.y);
         while(!check(&click));
         if (mine[click.x][click.y]) {
-            printf("完啦\n");
+            printf("Game Over\n");
             printf("0  ");
             for (int i = 1; i <= MAPSIZE; i++)
                 printf("%d ", i);
@@ -158,7 +158,7 @@ void draw() {
         }
         printf("\n");
     }
-    printf("请输入坐标x y：");
+    printf("Input coordinate x y：");
 }
 
 stack * push(stack * p, point now) {
