@@ -41,25 +41,28 @@ stack * push(stack * p, point now);
 stack * pop(stack * p);
 
 int main() {
-    printf("Press Enter\n");
+    printf("Press Enter to start game");
     getchar();
     while (play) {        
         creat_map();
         play_game();
-        printf("One more round: Y/N\n");
-        while (true) {
-            char key = getchar();
-            if (key == 'Y')
-                break;
-            if (key == 'N') {
-                play = 0;
-                break;
-            }
-        }
+        end_game();
     }
     return 0;
 }
 
+void end_game() {
+    printf("One more round: Y/N\n");
+    while (true) {
+        char key = getchar();
+        if (key == 'Y')
+            return;
+        if (key == 'N') {
+            play = 0;
+            return;
+        }
+    }
+}
 bool check(point * cli){
     if(cli->x > MAPSIZE || cli->x < 0 || cli->y > MAPSIZE || cli->y < 0) {
         scanf("%d%d", &cli->x, &cli->y);
