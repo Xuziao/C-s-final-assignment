@@ -14,13 +14,10 @@ printf("操作系统未知\n");
 exit(1);
 #endif
 
-#define MINENUM 10
-#define MAPSIZE 9
-
 bool play = 1;
-int mine[MAPSIZE + 2][MAPSIZE + 2];
-bool show[MAPSIZE + 2][MAPSIZE + 2];
-int mine_num[MAPSIZE + 2][MAPSIZE + 2];
+int mapsize;
+int minenum;
+int arr_size;
 
 typedef struct point {
     int x;
@@ -32,13 +29,13 @@ typedef struct queue {
     struct queue * next;
 }queue;
 
-void creat_map();
-void play_game();
+void creat_map(int *mine, int *mine_num, int *flags, bool *show);
+void play_game(int *mine, int *mine_num, bool *show);
 void clear_screen();
-int draw();
-void span(point now);
+int draw(int *mine_num, bool *show);
+void span(point now, int *mine, int *mine_num, bool *show);
 void end_game();
-bool check(point *cli);
+bool check(point *cli, int *mine_num, bool *show);
 queue * push(queue * p, point now);
 queue * pop(queue * top);
 queue * init_queue();
@@ -46,9 +43,18 @@ queue * init_queue();
 int main() {
     printf("Press Enter\n");
     getchar();
+    printf("Please enter mapsize n*n and the number of mines\n n = ");
+    scanf("%d", &mapsize);
+    arr_size = mapsize + 2;
+    printf("the number of mine = ");
+    scanf("%d",& minenum);
+    int mine[arr_size][arr_size];
+    bool show[arr_size][arr_size];
+    int mine_num[arr_size][arr_size];
+    bool flags[arr_size][arr_size];
     while (play) {        
-        creat_map();
-        play_game();
+        creat_map(mine, mine_num, flags, show);
+        play_game(mine, mine_num, show);
         end_game();
     }
     return 0;
@@ -69,73 +75,80 @@ void end_game() {
     }
 }
 
-bool check(point * cli){
-    if(cli->x > MAPSIZE || cli->x <= 0 || cli->y > MAPSIZE || cli->y <= 0) { 
+bool check(point * cli,int *mine_num, bool *show){
+    if(cli->x > mapsize || cli->x <= 0 || cli->y > mapsize || cli->y <= 0) { 
         clear_screen();
         printf("Invalid coordinates\n");
-        draw();
+        draw(mine_num, show);
+        scanf("%d%d", &cli->x, &cli->y);
+        return 0;
+    }
+    else if(show[arr_size * cli->x + cli->y]){
+        clear_screen();
+        printf("You have already clicked that area.\n");
+        draw(mine_num, show);
         scanf("%d%d", &cli->x, &cli->y);
         return 0;
     }
     return 1;
 }
 
-void creat_map() {
-    for (int i = 0; i < MAPSIZE + 2; i++)
-        for (int j = 0; j < MAPSIZE + 2; j++)
-            mine[i][j] = 0, show[i][j] = 0, mine_num[i][j] = 0;
-    for (int i = 0; i < MAPSIZE + 2; i++) {
-        mine_num[0][i] = mine[0][i] = 2;
-        mine_num[i][0] = mine[i][0] = 2;
-        mine_num[MAPSIZE + 1][i] = mine[MAPSIZE + 1][i] = 2;
-        mine_num[i][MAPSIZE + 1] = mine[i][MAPSIZE + 1] = 2;
+void creat_map(int *mine, int *mine_num, int *flags, bool *show) {
+    for (int i = 0; i < arr_size; i++)
+        for (int j = 0; j < arr_size; j++)
+            mine[i * arr_size + j] = 0, show[i * arr_size + j] = 0, mine_num[i * arr_size + j] = 0, flags[i * arr_size + j] = 0;
+    for (int i = 0; i < arr_size; i++) {
+        mine_num[i] = mine[i] = 2;
+        mine_num[i * arr_size] = mine[i * arr_size] = 2;
+        mine_num[(mapsize + 1) * arr_size + i] = mine[(mapsize + 1) * arr_size + i] = 2;
+        mine_num[i * arr_size + mapsize + 1] = mine[i * arr_size + mapsize + 1] = 2;
     }
     srand(time(NULL));
     clear_screen();
-    draw();
+    draw(mine_num, show);
     point first_click;
     scanf("%d%d", &first_click.x, &first_click.y);
-    while(!check(&first_click));
+    while(!check(&first_click, mine_num, show));
     int counter = 0;
-    while (counter < MINENUM) {
-        int pos = rand() % (MAPSIZE * MAPSIZE);
-        if (mine[pos / MAPSIZE + 1][pos % MAPSIZE + 1] || (pos / MAPSIZE + 1 == first_click.x && pos % MAPSIZE + 1 == first_click.y))
+    while (counter < minenum) {
+        int pos = rand() % (mapsize * mapsize);
+        if (mine[(pos / mapsize + 1) * arr_size + pos % mapsize + 1] || (pos / mapsize + 1 == first_click.x && pos % mapsize + 1 == first_click.y))
             continue;
-        mine[pos / MAPSIZE + 1][pos % MAPSIZE + 1] = true;
+        mine[(pos / mapsize + 1) * arr_size + pos % mapsize + 1] = true;
         counter++;
     }
-    for (int i = 1; i < MAPSIZE + 2; i++)
-        for (int j = 1; j < MAPSIZE + 2; j++)
+    for (int i = 1; i < arr_size; i++)
+        for (int j = 1; j < arr_size; j++)
             for (int a = -1; a <= 1; a++)
                 for (int b = -1; b <= 1; b++)
-                    mine_num[i][j] += (mine[i + a][j + b] == 1 ? 1 : 0);
-    span(first_click);
+                    mine_num[i * arr_size + j] += (mine[(i + a) * arr_size + j + b] == 1 ? 1 : 0);
+    span(first_click, mine, mine_num, show);
 }
 
-void play_game() {
+void play_game(int *mine, int *mine_num, bool *show) {
     while (true) {
         clear_screen();
-        if(draw() == MINENUM) {
+        if(draw(mine_num, show) == minenum) {
             printf("You win!\n");
             return;
         }
         point click;
         scanf("%d%d", &click.x, &click.y);
-        while(!check(&click));
-        if (mine[click.x][click.y]) {
+        while(!check(&click, mine_num, show));
+        if (mine[click.x * arr_size + click.y]) {
             clear_screen();
             printf("Game Over\n");
             printf("0  ");
-            for (int i = 1; i <= MAPSIZE; i++)
+            for (int i = 1; i <= mapsize; i++)
                 printf("%d ", i);
             printf("\n\n");
-            for (int i = 1; i <= MAPSIZE; i++) {
+            for (int i = 1; i <= mapsize; i++) {
                 printf("%d  ", i);
-                for (int j = 1; j <= MAPSIZE; j++) {
-                    if (show [i][j])
-                        printf("%d ", mine_num[i][j]);
+                for (int j = 1; j <= mapsize; j++) {
+                    if (show [i * arr_size + j])
+                        printf("%d ", mine_num[i * arr_size + j]);
                     else
-                        if (mine[i][j]) 
+                        if (mine[i * arr_size + j]) 
                             printf("x ");
                         else
                             printf("* ");
@@ -144,7 +157,7 @@ void play_game() {
             }
             return;
         }
-        span(click);
+        span(click, mine, mine_num, show);
     }
 }
 
@@ -164,17 +177,17 @@ void clear_screen() {
     }
 }
 
-int draw() {
+int draw(int *mine_num, bool *show) {
     int counter = 0;
     printf("0  ");
-    for (int i = 1; i <= MAPSIZE; i++)
+    for (int i = 1; i <= mapsize; i++)
         printf("%d ", i);
     printf("\n\n");
-    for (int i = 1; i <= MAPSIZE; i++) {
+    for (int i = 1; i <= mapsize; i++) {
         printf("%d  ", i);
-        for (int j = 1; j <= MAPSIZE; j++) {
-            if (show [i][j])
-                printf("%d ", mine_num[i][j]);
+        for (int j = 1; j <= mapsize; j++) {
+            if (show [i * arr_size + j])
+                printf("%d ", mine_num[i * arr_size + j]);
             else
                 printf("* "), counter++;
         }
@@ -208,20 +221,20 @@ queue * pop(queue * top) {
     return top;
 }
 
-void span(point now) {
+void span(point now, int *mine, int *mine_num, bool *show) {
     queue * top = init_queue();
     queue * p = top;
     p = push(p, now);
     while(top->next) {
-        show[p->data.x][p->data.y] = true;
+        show[p->data.x * arr_size + p->data.y] = true;
         top = pop(top);
         for (int i = -1; i <= 1; i++)
             for (int j = -1; j <= 1; j++) {
-                if (show[top->data.x + i][top->data.y + j])
+                if (show[(top->data.x + i) * arr_size + top->data.y + j])
                     continue;
-                if ((!mine[top->data.x + i][top->data.y + j])) {
-                    if (mine_num[top->data.x + i][top->data.y + j]) {
-                        show[top->data.x + i][top->data.y + j] = true;
+                if ((!mine[(top->data.x + i) * arr_size + top->data.y + j])) {
+                    if (mine_num[(top->data.x + i) * arr_size + top->data.y + j]) {
+                        show[(top->data.x + i) * arr_size + top->data.y + j] = true;
                         continue;
                     }
                     point temp;
