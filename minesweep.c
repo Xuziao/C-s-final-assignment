@@ -10,7 +10,7 @@ sys = 1;
 #elif __APPLE__
 sys = 2;
 #else
-printf("操作系统未知\n");
+printf("Unknown system.\n");
 exit(1);
 #endif
 
@@ -22,6 +22,7 @@ int arr_size;
 typedef struct point {
     int x;
     int y;
+    int z;
 }point;
 
 typedef struct queue {
@@ -30,12 +31,12 @@ typedef struct queue {
 }queue;
 
 void creat_map(int *mine, int *mine_num, int *flags, bool *show);
-void play_game(int *mine, int *mine_num, bool *show);
+void play_game(int *mine, int *mine_num, bool *show, bool *flags);
 void clear_screen();
-int draw(int *mine_num, bool *show);
-void span(point now, int *mine, int *mine_num, bool *show);
+int draw(int *mine_num, bool *show, bool *flags);
+void span(point now, int *mine, int *mine_num, bool *show, bool *flags);
 void end_game();
-bool check(point *cli, int *mine_num, bool *show);
+bool check(point *cli, int *mine_num, bool *show, bool *flags);
 queue * push(queue * p, point now);
 queue * pop(queue * top);
 queue * init_queue();
@@ -54,7 +55,7 @@ int main() {
     bool flags[arr_size][arr_size];
     while (play) {        
         creat_map(mine, mine_num, flags, show);
-        play_game(mine, mine_num, show);
+        play_game(mine, mine_num, show, flags);
         end_game();
     }
     return 0;
@@ -75,19 +76,26 @@ void end_game() {
     }
 }
 
-bool check(point * cli,int *mine_num, bool *show){
+bool check(point * cli,int *mine_num, bool *show, bool *flags){
+    if(cli->z != 1 || cli->z != 0) {
+        clear_screen();
+        printf("Please choose whether set a flag.\n");
+        draw(mine_num, show, flags);
+        scanf("%d%d%d", &cli->x, &cli->y, &cli->z);
+        return 0;
+    }
     if(cli->x > mapsize || cli->x <= 0 || cli->y > mapsize || cli->y <= 0) { 
         clear_screen();
         printf("Invalid coordinates\n");
-        draw(mine_num, show);
-        scanf("%d%d", &cli->x, &cli->y);
+        draw(mine_num, show, flags);
+        scanf("%d%d%d", &cli->x, &cli->y, &cli->z);
         return 0;
     }
     else if(show[arr_size * cli->x + cli->y]){
         clear_screen();
         printf("You have already clicked that area.\n");
-        draw(mine_num, show);
-        scanf("%d%d", &cli->x, &cli->y);
+        draw(mine_num, show, flags);
+        scanf("%d%d%d", &cli->x, &cli->y, &cli->z);
         return 0;
     }
     return 1;
@@ -105,10 +113,10 @@ void creat_map(int *mine, int *mine_num, int *flags, bool *show) {
     }
     srand(time(NULL));
     clear_screen();
-    draw(mine_num, show);
+    draw(mine_num, show, flags);
     point first_click;
     scanf("%d%d", &first_click.x, &first_click.y);
-    while(!check(&first_click, mine_num, show));
+    while(!check(&first_click, mine_num, show, flags));
     int counter = 0;
     while (counter < minenum) {
         int pos = rand() % (mapsize * mapsize);
@@ -122,19 +130,20 @@ void creat_map(int *mine, int *mine_num, int *flags, bool *show) {
             for (int a = -1; a <= 1; a++)
                 for (int b = -1; b <= 1; b++)
                     mine_num[i * arr_size + j] += (mine[(i + a) * arr_size + j + b] == 1 ? 1 : 0);
-    span(first_click, mine, mine_num, show);
+    span(first_click, mine, mine_num, show, flags);
 }
 
-void play_game(int *mine, int *mine_num, bool *show) {
+void play_game(int *mine, int *mine_num, bool *show, bool *flags) {
     while (true) {
         clear_screen();
-        if(draw(mine_num, show) == minenum) {
+        if(draw(mine_num, show, flags) == minenum) {
             printf("You win!\n");
             return;
         }
         point click;
-        scanf("%d%d", &click.x, &click.y);
-        while(!check(&click, mine_num, show));
+        scanf("%d%d%d", &click.x, &click.y, &click.z);
+        while(!check(&click, mine_num, show, flags));
+        flags[click.x * arr_size + click.y] = click.z;
         if (mine[click.x * arr_size + click.y]) {
             clear_screen();
             printf("Game Over\n");
@@ -157,7 +166,7 @@ void play_game(int *mine, int *mine_num, bool *show) {
             }
             return;
         }
-        span(click, mine, mine_num, show);
+        span(click, mine, mine_num, show, flags);
     }
 }
 
@@ -177,7 +186,7 @@ void clear_screen() {
     }
 }
 
-int draw(int *mine_num, bool *show) {
+int draw(int *mine_num, bool *show, bool *flags) {
     int counter = 0;
     printf("0  ");
     for (int i = 1; i <= mapsize; i++)
@@ -188,12 +197,15 @@ int draw(int *mine_num, bool *show) {
         for (int j = 1; j <= mapsize; j++) {
             if (show [i * arr_size + j])
                 printf("%d ", mine_num[i * arr_size + j]);
+            else if (flags[i * arr_size + j])
+                printf("! ");
             else
                 printf("* "), counter++;
         }
         printf("\n");
     }
-    printf("Input coordinate x y:");
+    printf("x y stand for coordinates, z is whether put a flag. 1 for set a flag, 0 for not.\n");
+    printf("Input x y z:");
     return counter;
 }
 
@@ -221,7 +233,7 @@ queue * pop(queue * top) {
     return top;
 }
 
-void span(point now, int *mine, int *mine_num, bool *show) {
+void span(point now, int *mine, int *mine_num, bool *show, bool *flags) {
     queue * top = init_queue();
     queue * p = top;
     p = push(p, now);
@@ -232,6 +244,7 @@ void span(point now, int *mine, int *mine_num, bool *show) {
             for (int j = -1; j <= 1; j++) {
                 if (show[(top->data.x + i) * arr_size + top->data.y + j])
                     continue;
+                if (flags[(top->data.x + i) * arr_size + top->data.y + j])
                 if ((!mine[(top->data.x + i) * arr_size + top->data.y + j])) {
                     if (mine_num[(top->data.x + i) * arr_size + top->data.y + j]) {
                         show[(top->data.x + i) * arr_size + top->data.y + j] = true;
