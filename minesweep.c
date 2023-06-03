@@ -84,7 +84,14 @@ bool check(point * cli,int *mine_num, bool *show, bool *flags){
         scanf("%d%d%d", &cli->x, &cli->y, &cli->z);
         return 0;
     }
-    if(cli->x > mapsize || cli->x <= 0 || cli->y > mapsize || cli->y <= 0) { 
+    else if (flags[arr_size * cli->x + cli->y] && cli->z == 0) {
+        clear_screen();
+        printf("You have marked %d %d, unmarked first\n", cli->x, cli->y);
+        draw(mine_num, show, flags);
+        scanf("%d%d%d", &cli->x, &cli->y, &cli->z);
+        return 0;
+    }
+    else if(cli->x > mapsize || cli->x <= 0 || cli->y > mapsize || cli->y <= 0) { 
         clear_screen();
         printf("Invalid coordinates\n");
         draw(mine_num, show, flags);
@@ -245,6 +252,7 @@ void span(point now, int *mine, int *mine_num, bool *show, bool *flags) {
                 if (show[(top->data.x + i) * arr_size + top->data.y + j])
                     continue;
                 if (flags[(top->data.x + i) * arr_size + top->data.y + j])
+                    continue;
                 if ((!mine[(top->data.x + i) * arr_size + top->data.y + j])) {
                     if (mine_num[(top->data.x + i) * arr_size + top->data.y + j]) {
                         show[(top->data.x + i) * arr_size + top->data.y + j] = true;
